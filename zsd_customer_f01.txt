@@ -1,0 +1,357 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZSD_CUSTOMER_F01
+*&---------------------------------------------------------------------*
+FORM excel_upload.
+
+  CALL FUNCTION 'TEXT_CONVERT_XLS_TO_SAP'
+    EXPORTING
+      i_line_header        = 'X'
+      i_tab_raw_data       = gt_raw
+      i_filename           = p_file
+    TABLES
+      i_tab_converted_data = gt_datatab[]
+    EXCEPTIONS
+      conversion_failed    = 1
+      OTHERS               = 2.
+
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+            WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ENDIF.
+
+
+ENDFORM.                    "GET_DATA
+*&---------------------------------------------------------------------*
+*&      Form  bapi_call
+*&---------------------------------------------------------------------*
+FORM bapi_call.
+
+  DATA: ls_kna1 TYPE kna1,
+        ls_knb1 TYPE knb1,
+        ls_knvv TYPE knvv,
+        ls_bapiaddr1 TYPE bapiaddr1,
+        lv_kunnr TYPE kunnr,
+        ls_out LIKE gs_datatab.
+
+  DATA: lt_knvi TYPE TABLE OF fknvi,
+        ls_knvi LIKE LINE OF  lt_knvi,
+        lt_knvp TYPE TABLE OF fknvp,
+        ls_knvp LIKE LINE OF lt_knvp.
+
+  LOOP AT gty_index_col.
+    LOOP AT gt_datatab INTO gs_datatab WHERE index = gty_index_col-index.
+
+      ls_kna1-kunnr = gs_datatab-kunnr.
+      ls_kna1-ktokd = gs_datatab-ktokd.
+      ls_kna1-stcd1 = gs_datatab-stcd1.
+      ls_kna1-stcd2 = gs_datatab-stcd2.
+      ls_kna1-stcd3 = gs_datatab-stcd3.
+
+      ls_knb1-kunnr = gs_datatab-kunnr.
+      ls_knb1-bukrs = gs_datatab-bukrs.
+      ls_knb1-pernr = gs_datatab-pernr.
+      ls_knb1-zuawa = gs_datatab-zuawa.
+      ls_knb1-akont = gs_datatab-akont.
+
+      ls_knvv-kunnr = gs_datatab-kunnr.
+      ls_knvv-vkorg = gs_datatab-vkorg.
+      ls_knvv-vtweg = gs_datatab-vtweg.
+      ls_knvv-spart = gs_datatab-spart.
+      ls_knvv-versg = gs_datatab-versg.
+      ls_knvv-zterm = gs_datatab-zterm.
+      ls_knvv-kalks = gs_datatab-kalks.
+      ls_knvv-kdgrp = gs_datatab-kdgrp.
+      ls_knvv-bzirk = gs_datatab-bzirk.
+      ls_knvv-pltyp = gs_datatab-pltyp.
+      ls_knvv-antlf = gs_datatab-antlf.
+      ls_knvv-vsbed = gs_datatab-vsbed.
+      ls_knvv-waers = gs_datatab-waers.
+      ls_knvv-ktgrd = gs_datatab-ktgrd.
+      ls_knvv-ktgrd = gs_datatab-ktgrd.
+      ls_knvv-vwerk = gs_datatab-vwerk.
+      ls_knvv-vkbur = gs_datatab-vkbur.
+
+      ls_bapiaddr1-name       = gs_datatab-name.
+      ls_bapiaddr1-name_2     = gs_datatab-name_2.
+      ls_bapiaddr1-name_3     = gs_datatab-name_3.
+      ls_bapiaddr1-sort1      = gs_datatab-sort1.
+      ls_bapiaddr1-street     = gs_datatab-street.
+      ls_bapiaddr1-postl_cod1 = gs_datatab-postl_cod1.
+      ls_bapiaddr1-region     = gs_datatab-region.
+      ls_bapiaddr1-langu      = gs_datatab-langu.
+      ls_bapiaddr1-country    = gs_datatab-country.
+
+      IF NOT gs_datatab-tatyp1 IS INITIAL.
+        ls_knvi-kunnr = gs_datatab-kunnr.
+        ls_knvi-aland = gs_datatab-aland.
+        ls_knvi-tatyp = gs_datatab-tatyp1.
+        ls_knvi-taxkd = gs_datatab-taxkd1.
+        APPEND ls_knvi TO lt_knvi.
+      ENDIF.
+
+      IF NOT gs_datatab-tatyp2 IS INITIAL.
+        ls_knvi-kunnr = gs_datatab-kunnr.
+        ls_knvi-aland = gs_datatab-aland.
+        ls_knvi-tatyp = gs_datatab-tatyp2.
+        ls_knvi-taxkd = gs_datatab-taxkd2.
+        APPEND ls_knvi TO lt_knvi.
+      ENDIF.
+
+      IF NOT gs_datatab-sh_kunnr IS INITIAL.
+        ls_knvp-kunnr = gs_datatab-kunnr.
+        ls_knvp-vkorg = gs_datatab-vkorg.
+        ls_knvp-vtweg = gs_datatab-vtweg.
+        ls_knvp-spart = gs_datatab-spart.
+        ls_knvp-parvw = 'WE'.
+        ls_knvp-kunn2 = gs_datatab-sh_kunnr.
+        APPEND ls_knvp TO lt_knvp.
+      ENDIF.
+      IF NOT gs_datatab-bp_kunnr IS INITIAL.
+        CLEAR ls_knvp.
+        ls_knvp-kunnr = gs_datatab-kunnr.
+        ls_knvp-vkorg = gs_datatab-vkorg.
+        ls_knvp-vtweg = gs_datatab-vtweg.
+        ls_knvp-spart = gs_datatab-spart.
+        ls_knvp-parvw = 'RE'.
+        ls_knvp-kunn2 = gs_datatab-bp_kunnr.
+        APPEND ls_knvp TO lt_knvp.
+      ENDIF.
+      IF NOT gs_datatab-bp_kunnr IS INITIAL.
+        CLEAR ls_knvp.
+        ls_knvp-kunnr = gs_datatab-kunnr.
+        ls_knvp-vkorg = gs_datatab-vkorg.
+        ls_knvp-vtweg = gs_datatab-vtweg.
+        ls_knvp-spart = gs_datatab-spart.
+        ls_knvp-parvw = 'RG'.
+        ls_knvp-kunn2 = gs_datatab-bp_kunnr.
+        APPEND ls_knvp TO lt_knvp.
+      ENDIF.
+      IF NOT gs_datatab-er_pernr IS INITIAL.
+        CLEAR ls_knvp.
+        ls_knvp-kunnr = gs_datatab-kunnr.
+        ls_knvp-vkorg = gs_datatab-vkorg.
+        ls_knvp-vtweg = gs_datatab-vtweg.
+        ls_knvp-spart = gs_datatab-spart.
+        ls_knvp-parvw = 'ZM'.
+        ls_knvp-pernr = gs_datatab-er_pernr.
+        APPEND ls_knvp TO lt_knvp.
+      ENDIF.
+      IF NOT gs_datatab-pe_pernr IS INITIAL.
+        CLEAR ls_knvp.
+        ls_knvp-kunnr = gs_datatab-kunnr.
+        ls_knvp-vkorg = gs_datatab-vkorg.
+        ls_knvp-vtweg = gs_datatab-vtweg.
+        ls_knvp-spart = gs_datatab-spart.
+        ls_knvp-parvw = 'VE'.
+        ls_knvp-pernr = gs_datatab-pe_pernr.
+        APPEND ls_knvp TO lt_knvp.
+      ENDIF.
+
+      CALL FUNCTION 'SD_CUSTOMER_MAINTAIN_ALL'
+        EXPORTING
+          i_kna1                  = ls_kna1
+          i_knb1                  = ls_knb1
+          i_knvv                  = ls_knvv
+          i_bapiaddr1             = ls_bapiaddr1
+        IMPORTING
+          e_kunnr                 = lv_kunnr
+        TABLES
+          t_xknvi                 = lt_knvi
+          t_xknvp                 = lt_knvp
+        EXCEPTIONS
+          client_error            = 1
+          kna1_incomplete         = 2
+          knb1_incomplete         = 3
+          knb5_incomplete         = 4
+          knvv_incomplete         = 5
+          kunnr_not_unique        = 6
+          sales_area_not_unique   = 7
+          sales_area_not_valid    = 8
+          insert_update_conflict  = 9
+          number_assignment_error = 10
+          number_not_in_range     = 11
+          number_range_not_extern = 12
+          number_range_not_intern = 13
+          account_group_not_valid = 14
+          parnr_invalid           = 15
+          bank_address_invalid    = 16
+          tax_data_not_valid      = 17
+          no_authority            = 18
+          company_code_not_unique = 19
+          dunning_data_not_valid  = 20
+          knb1_reference_invalid  = 21
+          cam_error               = 22
+          OTHERS                  = 23.
+      IF sy-subrc <> 0.
+      ENDIF.
+
+      IF sy-subrc IS INITIAL.
+        CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+          EXPORTING
+            wait = 'X'.
+        IF lv_kunnr IS INITIAL.
+          lv_kunnr = ls_kna1-kunnr.
+        ENDIF.
+        LOOP AT gt_datatab INTO ls_out WHERE index = gs_datatab-index.
+          ls_out-kunnr = lv_kunnr.
+          MODIFY gt_datatab FROM ls_out.
+        ENDLOOP.
+        gs_datatab-status = gc_green_light.
+        MODIFY gt_datatab FROM gs_datatab.
+      ELSE.
+        gs_datatab-status = gc_red_light.
+        MODIFY gt_datatab FROM gs_datatab.
+      ENDIF.
+      FREE: lt_knvi,lt_knvp,lv_kunnr,ls_out,ls_kna1,
+            ls_knb1,ls_knvv,ls_bapiaddr1.
+    ENDLOOP.
+  ENDLOOP.
+
+
+ENDFORM.                    "bapi_call
+*&---------------------------------------------------------------------*
+*&      Form  EXM_EXCEL_DOWN
+*&---------------------------------------------------------------------*
+FORM exm_excel_down .
+
+  DATA: lv_filename      TYPE string VALUE 'OrnekExcel',
+        lv_path          TYPE string,
+        lv_fullpath      TYPE string,
+        lv_result        TYPE i,
+        lv_default_fname TYPE string,
+        lv_fname         TYPE string.
+
+
+  DATA : lt_down TYPE zsds_customer_alv OCCURS 0 WITH HEADER LINE.
+
+  DATA: BEGIN OF ls_header,
+          name TYPE c LENGTH 30,
+        END OF ls_header.
+
+  DATA: lt_header LIKE TABLE OF ls_header.
+
+*set header
+  APPEND 'ÝNDEX'  TO lt_header.
+  APPEND 'Müþteri Kodu'  TO lt_header.
+  APPEND 'Þirket Kodu'  TO lt_header.
+  APPEND 'Satýþ Organizasyonu'  TO lt_header.
+  APPEND 'Daðýtým Kanalý'  TO lt_header.
+  APPEND 'Bölüm'  TO lt_header.
+  APPEND 'Hesap Grubu'  TO lt_header.
+  APPEND 'Müþteri Ünvaný (Ad)'  TO lt_header.
+  APPEND 'Müþteri Ünvaný2'  TO lt_header.
+  APPEND 'Müþteri Ünvaný3'  TO lt_header.
+  APPEND 'Arama Dizlimi 1/2'  TO lt_header.
+  APPEND 'Cadde/konut numarasý'  TO lt_header.
+  APPEND 'Posta kodu/Kent'  TO lt_header.
+  APPEND 'Ülke'  TO lt_header.
+  APPEND 'Bölge'  TO lt_header.
+  APPEND 'Dil'  TO lt_header.
+  APPEND 'Vergi Dairesi'  TO lt_header.
+  APPEND 'Vergi Numarasý'  TO lt_header.
+  APPEND 'TC.Kimlik No:'  TO lt_header.
+  APPEND 'Mtb.hesabý'  TO lt_header.
+  APPEND 'Sýralama anahtarý'  TO lt_header.
+  APPEND 'Personel numarasý'  TO lt_header.
+  APPEND 'Müþteri Bölgesi'  TO lt_header.
+  APPEND 'Satýþ Bürosu'  TO lt_header.
+  APPEND 'Müþteri Grubu'  TO lt_header.
+  APPEND 'Para Birimi'  TO lt_header.
+  APPEND 'Müþteri þemasý'  TO lt_header.
+  APPEND 'Fiyat Listesi'  TO lt_header.
+  APPEND 'Müþteri ist.grp'  TO lt_header.
+  APPEND 'Ödeme Koþulu'  TO lt_header.
+  APPEND 'Sevkiyat önkoþulu'  TO lt_header.
+  APPEND 'Teslimat yapan ÜY'  TO lt_header.
+  APPEND 'Azami kýsmi teslimat'  TO lt_header.
+  APPEND 'Hesap tayin Grubu'  TO lt_header.
+  APPEND 'Ülke'  TO lt_header.
+  APPEND 'Vergi tipi'  TO lt_header.
+  APPEND 'Vergi Göstergesi'  TO lt_header.
+  APPEND 'Vergi tipi'  TO lt_header.
+  APPEND 'Vergi Göstergesi'  TO lt_header.
+  APPEND 'SH-Malý teslim alan'  TO lt_header.
+  APPEND 'BP-Fatura alýcýsý'  TO lt_header.
+  APPEND 'PY-Ödeyen'  TO lt_header.
+  APPEND 'ER-Yetkili çalýþan'  TO lt_header.
+  APPEND 'PE-Satýþ sorumlusu'  TO lt_header.
+
+*fill data
+  lt_down-index      = '1' .
+  lt_down-kunnr      = ''.
+  lt_down-bukrs      = 'TB80'.
+  lt_down-vkorg      = 'TB80'.
+  lt_down-vtweg      = 'T1'.
+  lt_down-spart      = 'T1'.
+  lt_down-ktokd      = 'TB01'.
+  lt_down-name       = 'SEYMA ULAS'.
+  lt_down-name_2     = 'Ýsim2'.
+  lt_down-name_3     = 'HEPSINEREDE.COM/SIPNO:0601373466-4504483'.
+  lt_down-sort1      = 'ARAMA DIZILIMI'.
+  lt_down-street     = 'TUZLA MERMERCÝLER ORG SAN.BÖLG GAZÝ BLV'.
+  lt_down-postl_cod1 = '777777'.
+  lt_down-country    = 'TR'.
+  lt_down-region     = '34'.
+  lt_down-langu      = 'TR'.
+  lt_down-stcd1      = ''.
+  lt_down-stcd2      = ''.
+  lt_down-stcd3      = '1111111111'.
+  lt_down-akont      = '1200100001'.
+  lt_down-zuawa      = 'Z02'.
+  lt_down-pernr      = '1296'.
+  lt_down-bzirk      = 'E1'.
+  lt_down-vkbur      = 'TB80'.
+  lt_down-kdgrp      = 'A6'.
+  lt_down-waers      = 'TRY'.
+  lt_down-kalks      = '1'.
+  lt_down-pltyp      = '02'.
+  lt_down-versg      = '1'.
+  lt_down-zterm      = '0010'.
+  lt_down-vsbed      = '01'.
+  lt_down-vwerk      = 'TB80'.
+  lt_down-antlf      = '9'.
+  lt_down-ktgrd      = '01'.
+  lt_down-aland      = 'TR'.
+  lt_down-tatyp1     = 'ZKDV'.
+  lt_down-taxkd1     = '1'.
+  lt_down-tatyp2     = 'ZOTV'.
+  lt_down-taxkd2     = '0'.
+  lt_down-sh_kunnr   = '1000020'.
+  lt_down-bp_kunnr   = '1000020'.
+  lt_down-py_kunnr   = '1000020'.
+  lt_down-er_pernr   = '1479'.
+  lt_down-pe_pernr   = '1477'.
+  APPEND lt_down.
+
+
+  CALL METHOD cl_gui_frontend_services=>get_desktop_directory
+    CHANGING
+      desktop_directory = lv_fullpath
+    EXCEPTIONS
+      cntl_error        = 1.
+
+  CALL METHOD cl_gui_cfw=>update_view.
+
+ CONCATENATE lv_fullpath '\ornekexcel.xls' INTO lv_fname.
+
+*download file in excel
+  CALL FUNCTION 'GUI_DOWNLOAD'
+    EXPORTING
+      bin_filesize        = ''
+      filename            = lv_fname
+      filetype            = 'DAT'
+    TABLES
+      data_tab            = lt_down
+      fieldnames          = lt_header
+    EXCEPTIONS
+      file_open_error     = 1
+      file_write_error    = 2
+      invalid_filesize    = 3
+      invalid_table_width = 4
+      invalid_type        = 5
+      no_batch            = 6
+      unknown_error       = 7
+      OTHERS              = 8.
+
+
+ENDFORM.                    " EXM_EXCEL_DOWN

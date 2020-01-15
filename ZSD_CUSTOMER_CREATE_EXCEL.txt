@@ -1,0 +1,39 @@
+*---------------------------------------------------------------------*
+*   Report         :  ZSD_CUSTOMER_CREATE_EXCEL
+*   Author         :  Yunus Emre COÞKUN - xyemre (Renova consulting)
+*   Date           :  02.12.2019
+*   Program Purpose:  Excel upload ile cari oluþturma
+*   Tcode          :  ZSDR028
+*----------------------------------------------------------------------*
+
+REPORT  zsd_customer_create_excel.
+
+INCLUDE zsd_customer_top.
+INCLUDE zsd_customer_f01.
+INCLUDE zsd_customer_alv.
+
+INITIALIZATION.
+  sscrfields-functxt_01 = 'Örnek Excel Ýndir'.
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_file.
+  CALL FUNCTION 'F4_FILENAME'
+    EXPORTING
+      field_name = 'P_FILE'
+    IMPORTING
+      file_name  = p_file.
+
+AT SELECTION-SCREEN.
+  CASE sscrfields-ucomm.
+      WHEN'FC01'.
+      PERFORM exm_excel_down.
+  ENDCASE.
+
+START-OF-SELECTION.
+  PERFORM excel_upload.
+
+END-OF-SELECTION.
+  IF NOT gt_datatab[] IS INITIAL.
+    PERFORM display_alv.
+  ELSE.
+    MESSAGE 'Veri Aktarýlamadý.' TYPE 'S' DISPLAY LIKE 'E'.
+  ENDIF.

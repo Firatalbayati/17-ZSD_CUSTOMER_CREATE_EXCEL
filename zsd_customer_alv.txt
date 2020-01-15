@@ -1,0 +1,75 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZSD_CUSTOMER_ALV
+*&---------------------------------------------------------------------*
+FORM display_alv.
+
+  CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'
+    EXPORTING
+      i_program_name         = sy-repid
+      i_structure_name       = gc_struc
+    CHANGING
+      ct_fieldcat            = gt_fact
+    EXCEPTIONS
+      inconsistent_interface = 1
+      program_error          = 2
+      OTHERS                 = 3.
+  IF sy-subrc <> 0.
+  ENDIF.
+
+  LOOP AT gt_fact INTO gs_fact.
+    CASE gs_fact-fieldname.
+      WHEN 'CELL'.
+        gs_fact-no_out = abap_true.
+      WHEN 'STATUS'.
+        gs_fact-seltext_l = 'DURUM'.
+        GS_FACT-ddictxt   = 'L'.
+      WHEN OTHERS.
+    ENDCASE.
+    MODIFY gt_fact FROM gs_fact.
+  ENDLOOP.
+
+  gs_layout-zebra             = abap_true.
+  gs_layout-colwidth_optimize = abap_true.
+  gs_layout-box_fieldname     = 'CELL'.
+
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      i_callback_program       = sy-repid
+      i_callback_pf_status_set = gc_status "SET_PF_STATUS
+      i_callback_user_command  = gc_command "USER_COMMAND
+      is_layout                = gs_layout
+      it_fieldcat              = gt_fact
+    TABLES
+      t_outtab                 = gt_datatab
+    EXCEPTIONS
+      program_error            = 1
+      OTHERS                   = 2.
+  IF sy-subrc <> 0.
+  ENDIF.
+
+ENDFORM.                    "display_alv
+*&---------------------------------------------------------------------*
+*&      Form  set_pf_status
+*&---------------------------------------------------------------------*
+FORM set_pf_status USING rt_extab TYPE slis_t_extab.
+  SET PF-STATUS 'STANDARD'.
+ENDFORM.                    "set_pf_status
+*&---------------------------------------------------------------------*
+*&      Form  USER_COMMAND
+*&---------------------------------------------------------------------*
+FORM user_command USING r_ucomm TYPE sy-ucomm
+        rs_selfield  TYPE slis_selfield.
+  CASE '&CREATE'.
+      LOOP AT gt_datatab INTO gs_datatab WHERE cell  = abap_true AND
+                                               kunnr = space.
+        gty_index_col-index = gs_datatab-index.
+        COLLECT gty_index_col.
+      ENDLOOP.
+      IF NOT gty_index_col[] IS INITIAL.
+        PERFORM bapi_call.
+        rs_selfield-refresh = 'X'.
+      ELSE.
+        MESSAGE 'En az bir satýr seçmelisiniz' TYPE 'I'.
+      ENDIF.
+  ENDCASE.
+ENDFORM.                    "USER_COMMAND

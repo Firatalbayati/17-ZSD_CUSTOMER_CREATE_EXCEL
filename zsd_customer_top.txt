@@ -1,0 +1,32 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZSD_CUSTOMER_TOP
+*&---------------------------------------------------------------------*
+
+TYPE-POOLS :slis,abap,truxs.
+
+TABLES : sscrfields.
+
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE text-001.
+PARAMETERS: p_file TYPE rlgrap-filename.
+SELECTION-SCREEN END OF BLOCK b1.
+
+SELECTION-SCREEN: FUNCTION KEY 1.
+
+CONSTANTS: gc_struc TYPE  tabname VALUE 'ZSDS_CUSTOMER_ALV',
+           gc_command TYPE slis_formname VALUE 'USER_COMMAND',
+           gc_status  TYPE slis_formname VALUE 'SET_PF_STATUS',
+           gc_green_light  TYPE char4 VALUE '@08@',
+           gc_red_light    TYPE char4 VALUE '@0A@'.
+
+
+DATA: BEGIN OF gty_index_col OCCURS 0,
+    index TYPE char3,
+        END OF gty_index_col.
+
+DATA: gt_datatab  TYPE TABLE OF zsds_customer_alv,
+      gs_datatab  TYPE zsds_customer_alv,
+      gt_fact     TYPE slis_t_fieldcat_alv,
+      gs_fact     TYPE slis_fieldcat_alv,
+      gs_layout   TYPE slis_layout_alv.
+
+DATA: gt_raw TYPE truxs_t_text_data.
